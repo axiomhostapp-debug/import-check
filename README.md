@@ -55,6 +55,19 @@ rule options and missing referenced columns fail closed. Keys and comparisons us
 exact cell strings, preserving leading zeros, case and whitespace. Whitespace-only
 keys/required fields are treated as missing. No automatic cleanup rewrites your data.
 
+## Focused comparison
+
+Optionally enter exact column names in “Compare only these columns”, one per line.
+For example, `Unit Price` filters out date-only changes in monthly price lists.
+Leave it blank to compare all columns, as older saved rules do. Saved JSON rules
+may include `"compare": ["Unit Price"]`; omitted means all columns, while an empty
+array is rejected to avoid accidentally comparing nothing.
+
+This only filters changed-value comparisons. Added/removed rows, mismatched column
+sets, ambiguous keys and every validation rule remain active. “Unchanged” means
+unchanged **within the selected scope**, not byte-identical rows. The report includes
+`comparedColumns` and `comparisonScope` alongside the saved rules.
+
 ## Verification
 
 ```sh

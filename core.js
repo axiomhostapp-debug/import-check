@@ -36,12 +36,13 @@ export function parseCSV(text, delimiter = ',') {
 function issue(line,column,code,message){return {line,column,code,message};}
 export function checkRules(rules, headers) {
   if(!rules||typeof rules!=='object'||Array.isArray(rules)||rules.version!==1)throw new Error('Rules must be an object with version: 1.');
-  for(const k of Object.keys(rules))if(!['version','key','required','columns'].includes(k))throw new Error(`Unknown rule setting: ${k}.`);
+  for(const k of Object.keys(rules))if(!['version','key','required','columns','compare'].includes(k))throw new Error(`Unknown rule setting: ${k}.`);
   for(const key of ['key','required']) {
     if(!Array.isArray(rules[key])||rules[key].some(c=>typeof c!=='string')||new Set(rules[key]).size!==rules[key].length)throw new Error(`${key} must be an array of distinct column names.`);
   }
   if(!rules.columns||typeof rules.columns!=='object'||Array.isArray(rules.columns))throw new Error('columns must be an object.');
-  const referenced=new Set([...rules.key,...rules.required,...Object.keys(rules.columns)]);
+  if(rules.compare!==undefined&&(!Array.isArray(rules.compare)||!rules.compare.length||rules.compare.some(c=>typeof c!=='string')||new Set(rules.compare).size!==rules.compare.length))throw new Error('compare must be a nonempty array of distinct column names, or omitted for all columns.');
+  const referenced=new Set([...rules.key,...rules.required,...Object.keys(rules.columns),...(rules.compare||[])]);
   const missing=[...referenced].filter(c=>!headers.includes(c));
   if(missing.length)throw new Error(`Rules reference missing columns: ${missing.join(', ')}.`);
   for(const [column,r] of Object.entries(rules.columns)){
@@ -88,7 +89,8 @@ export function validate(table,rules) {
 }
 export function diffTables(baseline,current,rules){
   checkRules(rules,baseline.headers);checkRules(rules,current.headers);
-  const empty={comparable:false,issues:[],added:[],removed:[],changed:[],unchanged:0};
+  const scope=rules.compare||current.headers;
+  const empty={comparable:false,issues:[],added:[],removed:[],changed:[],unchanged:0,comparedColumns:[...scope],comparisonScope:rules.compare?'selected':'all'};
   if(!rules.key.length)return {...empty,issues:[issue(null,'','key_required','Choose one or more key columns to compare exports.')]};
   if(baseline.headers.length!==current.headers.length||baseline.headers.some(h=>!current.headers.includes(h)))return {...empty,issues:[issue(null,'','schema_change','Column sets differ. Align export schemas before comparison.')]};
   const a=keyIndex(baseline,rules),b=keyIndex(current,rules);
@@ -97,7 +99,7 @@ export function diffTables(baseline,current,rules){
   const result={...empty,comparable:true,issues};
   for(const [key,row] of b.map){
     if(!a.map.has(key)){result.added.push(key);continue;}
-    const before=a.map.get(key);const fields=current.headers.filter(c=>row.values[c]!==before.values[c]).map(column=>({column,before:before.values[column],after:row.values[column]}));
+    const before=a.map.get(key);const fields=scope.filter(c=>row.values[c]!==before.values[c]).map(column=>({column,before:before.values[column],after:row.values[column]}));
     if(fields.length)result.changed.push({key,fields});else result.unchanged++;
   }
   for(const key of a.map.keys())if(!b.map.has(key))result.removed.push(key);

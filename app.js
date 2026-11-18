@@ -18,7 +18,8 @@ function shapeRules(rules) {
       ![...rules.key, ...rules.required].every(value => typeof value === 'string' && value.trim() && !/[\r\n]/.test(value))) {
     throw new Error('Expected a version 1 rules file with key and required arrays of column names, and a columns object.');
   }
-  checkRules(rules, [...new Set([...rules.key, ...rules.required, ...Object.keys(rules.columns)])]);
+  if (rules.compare !== undefined && (!Array.isArray(rules.compare) || rules.compare.some(value => typeof value !== 'string' || !value.trim() || /[\r\n]/.test(value)))) throw new Error('Comparison columns must be exact single-line column names.');
+  checkRules(rules, [...new Set([...rules.key, ...rules.required, ...Object.keys(rules.columns), ...(rules.compare || [])])]);
   return rules;
 }
 
@@ -26,7 +27,8 @@ function rulesFromForm() {
   let columns;
   try { columns = JSON.parse(get('columns').value); }
   catch { throw new Error('Column rules must be valid JSON. Check the quotes, commas, and braces.'); }
-  return shapeRules({version: 1, key: names(get('key').value), required: names(get('required').value), columns});
+  const compare = names(get('compare').value);
+  return shapeRules({version: 1, key: names(get('key').value), required: names(get('required').value), columns, ...(compare.length ? {compare} : {})});
 }
 
 function invalidate() {
@@ -135,6 +137,7 @@ function render() {
     return;
   }
   const diff = report.comparison;
+  section(target, 'Comparison scope', report.rules.compare ? 'Changed values checked only in: ' + report.rules.compare.join(', ') + '. Unchanged means unchanged within this scope. Added/removed rows and schema checks still apply.' : 'All columns compared.');
   if (!diff.comparable) {
     const blocked = section(target, 'Comparison unavailable', 'Fix the key or schema issues below and run the check again. No row changes are reported until matching is reliable.');
     if (diff.issues?.length) issues(blocked, diff.issues, true);
@@ -210,7 +213,7 @@ workflow.addEventListener('submit', async event => {
 for (const id of ['current', 'baseline', 'delimiter']) {
   get(id).addEventListener('change', () => { invalidate(); fileInfo(); });
 }
-for (const id of ['key', 'required', 'columns']) {
+for (const id of ['key', 'required', 'columns', 'compare']) {
   get(id).addEventListener('input', () => { ruleGeneration++; invalidate(); get('rules-info').textContent = ''; });
 }
 get('clear-baseline').addEventListener('click', () => {
@@ -239,6 +242,7 @@ get('rules-file').addEventListener('change', async () => {
     if (thisImport !== ruleGeneration) return;
     get('key').value = imported.key.join('\n');
     get('required').value = imported.required.join('\n');
+    get('compare').value = (imported.compare || []).join('\n');
     get('columns').value = JSON.stringify(imported.columns, null, 2);
     invalidate();
     get('rules-info').textContent = 'Loaded rules from ' + file.name + '.';

@@ -37,6 +37,8 @@
         <label class="field">Key columns <small>One column name per line</small><textarea id="key" rows="2" placeholder="SKU" spellcheck="false"></textarea></label>
         <label class="field">Required values <small>One column name per line</small><textarea id="required" rows="2" placeholder="Quantity" spellcheck="false"></textarea></label>
       </div>
+      <label class="field">Compare only these columns <small>Optional. One exact column name per line; blank compares every column.</small><textarea id="compare" rows="2" placeholder="Unit Price" spellcheck="false" aria-describedby="compare-help"></textarea></label>
+      <p id="compare-help" class="hint">This filters changed values only. Added and removed rows, schema mismatches, and all validation checks are still reported. “Unchanged” means unchanged within the selected scope.</p>
       <details id="advanced">
         <summary>Advanced rules <small>Types, limits, allowed values, and rule files</small></summary>
         <p class="hint">Set per-column rules as JSON. Supported types: string, number, integer, and date (YYYY-MM-DD). Use <code>min</code> and <code>max</code> for numeric columns and <code>enum</code> for allowed text values.</p>
