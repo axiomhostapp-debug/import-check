@@ -1,0 +1,66 @@
+:root{font:16px/1.55 Arial,Helvetica,sans-serif;color:#191919;background:#f7f7f7;--muted:#555;--line:#d1d1d1;--surface:#fff;--subtle:#f1f1f1}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.shell{width:min(calc(100% - 40px),1024px);margin:auto}
+.masthead,.runbar,.result-head,.file-actions,.actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.masthead{min-height:62px}
+.brand{font-weight:800;letter-spacing:-.035em;font-size:1.22rem;text-decoration:none;color:inherit}
+.pill,.badge{display:inline-block;border:1px solid #999;padding:3px 9px;border-radius:4px;font-size:.8rem;font-weight:700}
+.intro{padding:48px 0 26px}
+.eyebrow{letter-spacing:.12em;font-size:.74rem;font-weight:800;color:var(--muted);margin:0 0 6px}
+h1,h2,h3,p{margin:0}
+h1{font-size:clamp(2.25rem,7vw,4rem);line-height:1.03;letter-spacing:-.068em}
+h2{font-size:1.36rem;letter-spacing:-.03em}
+h3{font-size:1.05rem}
+.lede{font-size:1.13rem;margin-top:14px}
+.privacy{margin-top:14px;color:var(--muted);font-size:.89rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:24px;margin-bottom:15px;min-width:0}
+.step{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.step>span{background:var(--subtle);border:1px solid var(--line);border-radius:4px;font-size:.8rem;font-weight:bold;padding:4px 7px;margin-top:2px}
+.step p,.hint{color:var(--muted);font-size:.88rem}
+.field{font-size:.92rem;font-weight:700;display:block;min-width:0}
+small{color:var(--muted);font-size:.78rem;font-weight:400;margin-left:5px}
+.file-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.file-box{background:var(--subtle);padding:14px;border:1px solid var(--line);border-radius:6px}
+input,button,textarea,select{font:inherit;color:inherit}
+input[type=file]{display:block;width:100%;margin-top:8px;font-size:.84rem;font-weight:400}
+input::file-selector-button,.secondary,select,textarea{background:#fff;border:1px solid #888;border-radius:5px}
+input::file-selector-button{padding:5px 8px;cursor:pointer}
+textarea{width:100%;padding:8px 10px;display:block;margin-top:5px;resize:vertical;font-family:ui-monospace,monospace;font-weight:400}
+select{padding:6px 8px}
+button{cursor:pointer;font-size:.88rem;font-weight:700;padding:8px 12px}
+button:disabled{cursor:default;color:#666;background:#ededed}
+button:not(:disabled):hover,input::file-selector-button:hover{box-shadow:inset 0 0 0 1px currentColor}
+.primary{background:#191919;color:white;border:1px solid #191919;border-radius:5px}
+.secondary{white-space:normal}
+:focus-visible{outline:3px solid #111;outline-offset:3px}
+.file-actions,.actions{margin-top:12px;justify-content:flex-start}
+.inline{display:flex;align-items:center;gap:8px}
+.hint:not(:empty){margin-top:8px}
+details{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+details label{margin-top:8px}
+summary{cursor:pointer;font-weight:700}
+code{overflow-wrap:anywhere}
+.runbar{margin:18px 0}
+.runbar button+button{margin-left:6px}
+.error{background:var(--surface);border:2px solid #111;padding:12px;border-radius:5px;margin:12px 0}
+.result-head{border-bottom:1px solid var(--line);padding-bottom:13px}
+.result-section{margin-top:16px}
+.result-section p{margin-top:5px}
+.strong-badge{background:#191919;color:#fff;border-color:#191919}
+.table-wrap{overflow:auto;border:1px solid var(--line);margin-top:8px;border-radius:5px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;vertical-align:top;padding:7px 9px;max-width:30rem;overflow-wrap:anywhere;white-space:pre-wrap}
+thead{background:#ededed}
+tbody tr+tr{border-top:1px solid var(--line)}
+.result-section ul{padding-left:20px;overflow-wrap:anywhere}
+footer{border-top:1px solid var(--line);padding:14px 0 30px;color:var(--muted);font-size:.82rem}
+@media(max-width:650px){.shell{width:calc(100% - 28px)}.intro{padding-top:32px}.file-grid{grid-template-columns:1fr}.panel{padding:16px}.lede{font-size:1rem}.runbar{gap:4px}}
+
+.header-list{overflow-wrap:anywhere;white-space:pre-wrap}
+/* Keep actionable line numbers legible; narrow screens scroll within the table. */
+th:first-child,td:first-child{white-space:nowrap;min-width:4.5rem}
+th:nth-child(2),td:nth-child(2){min-width:8rem}
+th:last-child,td:last-child{min-width:14rem}

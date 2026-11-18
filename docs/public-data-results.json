@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "name": "2024-10-31-food.csv",
+      "sha256": "ffa9c883d4563f3d0d46b7744e0993f6cf447a34086cd67ea879b4c43d5fde62",
+      "rows": 68875,
+      "issues": 88
+    },
+    {
+      "name": "2025-04-24-food.csv",
+      "sha256": "81e8e248be6e4a0624ffd573d5f0eb7dbe009c8099325da0747cbf80b14edbbc",
+      "rows": 74175,
+      "issues": 88
+    }
+  ],
+  "usdaDiff": {
+    "added": 5300,
+    "removed": 0,
+    "changed": 0,
+    "unchanged": 68875
+  },
+  "nutrientDuplicateKeyIssues": 92297,
+  "airportDiff": {
+    "added": 17,
+    "removed": 1,
+    "changed": 114,
+    "unchanged": 86240
+  }
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Import Check | CSV preflight</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" type="module"></script>
+</head>
+<body>
+<header><div class="shell masthead"><a href="./" class="brand">Import Check</a><span class="pill">Local workspace</span></div></header>
+<main class="shell">
+  <section class="intro" aria-labelledby="title">
+    <p class="eyebrow">CSV PREFLIGHT</p>
+    <h1>Check before you import.</h1>
+    <p class="lede">Catch missing values, duplicate keys, and unexpected changes in recurring CSV exports.</p>
+    <p class="privacy">Files are read in this browser tab, never uploaded. Nothing is saved unless you download it.</p>
+  </section>
+  <form id="workflow">
+    <section class="panel" aria-labelledby="files-heading">
+      <div class="step"><span aria-hidden="true">01</span><div><h2 id="files-heading">Choose your exports</h2><p>Select the CSV you plan to import. Add an earlier export to compare them.</p></div></div>
+      <div class="file-grid">
+        <label class="field file-box">Current CSV <small>Required</small><input id="current" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" required></label>
+        <label class="field file-box">Baseline CSV <small>Optional</small><input id="baseline" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"></label>
+      </div>
+      <div class="file-actions">
+        <label class="field inline">Delimiter <select id="delimiter"><option value=",">Comma</option><option value=";">Semicolon</option><option value="tab">Tab</option></select></label>
+        <button id="clear-baseline" type="button" class="secondary" disabled>Remove baseline</button>
+      </div>
+      <p id="file-info" class="hint" role="status"></p>
+      <p id="headers-info" class="hint header-list" hidden></p>
+    </section>
+    <section class="panel" aria-labelledby="rules-heading">
+      <div class="step"><span aria-hidden="true">02</span><div><h2 id="rules-heading">Set validation rules</h2><p>Use stable keys, such as a SKU, to match rows across exports. Combine columns when a single column is not unique. Column names are case-sensitive.</p></div></div>
+      <div class="file-grid">
+        <label class="field">Key columns <small>One column name per line</small><textarea id="key" rows="2" placeholder="SKU" spellcheck="false"></textarea></label>
+        <label class="field">Required values <small>One column name per line</small><textarea id="required" rows="2" placeholder="Quantity" spellcheck="false"></textarea></label>
+      </div>
+      <details id="advanced">
+        <summary>Advanced rules <small>Types, limits, allowed values, and rule files</small></summary>
+        <p class="hint">Set per-column rules as JSON. Supported types: string, number, integer, and date (YYYY-MM-DD). Use <code>min</code> and <code>max</code> for numeric columns and <code>enum</code> for allowed text values.</p>
+        <label class="field">Column rules (JSON)<textarea id="columns" rows="5" spellcheck="false" aria-describedby="rules-example">{}</textarea></label>
+        <p class="hint" id="rules-example">Example: <code>{"Quantity":{"type":"integer","min":0},"State":{"type":"string","enum":["active","archived"]}}</code></p>
+        <div class="actions"><label class="field">Import a rules file<input id="rules-file" type="file" accept=".json,application/json"></label><button type="button" id="export-rules" class="secondary">Download rules</button></div>
+      </details>
+      <p id="rules-info" class="hint" role="status"></p>
+    </section>
+    <div class="runbar"><div><button class="primary" id="run" type="submit">Run preflight</button><button class="secondary" id="clear-workspace" type="button">Clear workspace</button></div><p class="hint">The source files are never modified.</p></div>
+    <p class="error" id="error" role="alert" hidden></p>
+  </form>
+  <section class="panel results" id="results" aria-labelledby="results-title" hidden tabindex="-1">
+    <div class="result-head"><div><p class="eyebrow">PREFLIGHT REPORT</p><h2 id="results-title">Results</h2></div><button id="download-report" class="secondary" type="button">Download report</button></div>
+    <p class="hint">Reports may include file names, keys, and original cell values. Review before sharing.</p>
+    <div id="report"></div>
+  </section>
+  <footer>Import Check · UTF-8 delimited files with a header row · No account or uploads</footer>
+</main>
+</body>
+</html>

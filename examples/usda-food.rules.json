@@ -1,0 +1,1 @@
+{"version":1,"key":["fdc_id"],"required":["fdc_id","description","data_type","publication_date"],"columns":{"fdc_id":{"type":"integer","min":1},"publication_date":{"type":"date"}}}
