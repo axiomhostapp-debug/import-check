@@ -118,3 +118,15 @@ browser files, stale-result invalidation and report downloads. `index.html` and
 ## License
 
 Provided for code review. No open-source license is granted.
+
+### Headers with line breaks
+
+Open **Pick exact names from your CSV** after choosing a current export. Select
+an original header and add it to the key, required fields, or comparison scope.
+Headers are shown as quoted strings: `\n` marks a line break, not a replacement
+character in the source. Selecting a multiline name switches the three name
+fields to JSON arrays so the exact value survives editing and rule-file downloads.
+Existing one-name-per-line entry still works for ordinary headers. Imported rules
+with multiline names also work before files are selected. To return to line-based
+editing, remove multiline names first. The picker reads headers only; run preflight
+to validate the whole export. No source file is changed or uploaded.

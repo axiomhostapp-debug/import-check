@@ -7,6 +7,12 @@ let generation = 0;
 let ruleGeneration = 0;
 let report = null;
 let activeWorker = null;
+let headerWorker = null;
+let pickerHeaders = [];
+let exactMode = false;
+const headerFields = ['key', 'required', 'compare'];
+const hasLineBreak = value => /[\r\n]/.test(value);
+const displayHeader = value => JSON.stringify(value);
 
 const delimiter = () => get('delimiter').value === 'tab' ? '\t' : get('delimiter').value;
 const names = (value) => value.split(/\r?\n/).filter(line => line.trim() !== '');
@@ -15,20 +21,93 @@ const plain = (value) => value !== null && typeof value === 'object' && !Array.i
 function shapeRules(rules) {
   if (!plain(rules) || rules.version !== 1 ||
       !Array.isArray(rules.key) || !Array.isArray(rules.required) || !plain(rules.columns) ||
-      ![...rules.key, ...rules.required].every(value => typeof value === 'string' && value.trim() && !/[\r\n]/.test(value))) {
+      ![...rules.key, ...rules.required].every(value => typeof value === 'string' && value.trim())) {
     throw new Error('Expected a version 1 rules file with key and required arrays of column names, and a columns object.');
   }
-  if (rules.compare !== undefined && (!Array.isArray(rules.compare) || rules.compare.some(value => typeof value !== 'string' || !value.trim() || /[\r\n]/.test(value)))) throw new Error('Comparison columns must be exact single-line column names.');
+  if (rules.compare !== undefined && (!Array.isArray(rules.compare) || rules.compare.some(value => typeof value !== 'string' || !value.trim()))) throw new Error('Comparison columns must be exact column names.');
   checkRules(rules, [...new Set([...rules.key, ...rules.required, ...Object.keys(rules.columns), ...(rules.compare || [])])]);
   return rules;
+}
+
+function fieldNames(id) {
+  const value = get(id).value;
+  if (!exactMode) return names(value);
+  if (!value.trim()) return [];
+  try {
+    const list = JSON.parse(value);
+    if (Array.isArray(list) && list.every(name => typeof name === 'string' && name.trim())) return list;
+  } catch { /* Include the field name in the error below. */ }
+  throw new Error(id + ' must be a JSON array of exact column names.');
+}
+
+function setNames(values, exact) {
+  exactMode = exact;
+  get('exact-names').checked = exact;
+  for (const id of headerFields) {
+    get(id).value = exact ? JSON.stringify(values[id]) : values[id].join('\n');
+    get(id).placeholder = exact ? '[]' : {key: 'SKU', required: 'Quantity', compare: 'Unit Price'}[id];
+    get(id + '-format').textContent = exact ?
+      (id === 'compare' ? 'JSON array. Leave empty to compare every column.' : 'JSON array of exact column names') :
+      (id === 'compare' ? 'Optional. One exact column name per line; blank compares every column.' : 'One column name per line');
+  }
+}
+
+function updateRules() {
+  ruleGeneration++;
+  invalidate();
+  get('rules-info').textContent = '';
+}
+
+function loadHeaders() {
+  if (headerWorker) { headerWorker.terminate(); headerWorker = null; }
+  pickerHeaders = [];
+  const select = get('header-column');
+  select.replaceChildren();
+  select.disabled = true;
+  for (const id of headerFields) get('add-' + id).disabled = true;
+  const status = get('header-status');
+  const currentFile = get('current').files[0];
+  if (!currentFile) {
+    status.textContent = 'Choose a current CSV to list its headers.';
+    return;
+  }
+  status.textContent = 'Reading current CSV headers…';
+  try {
+    const worker = new Worker(new URL('./worker.js', import.meta.url), {type: 'module'});
+    headerWorker = worker;
+    const finish = (data) => {
+      if (headerWorker !== worker) return;
+      worker.terminate();
+      headerWorker = null;
+      if (data.error) {
+        status.textContent = data.error;
+        return;
+      }
+      pickerHeaders = data.headers;
+      pickerHeaders.forEach((header, index) => {
+        const option = element('option', displayHeader(header));
+        option.value = String(index);
+        select.append(option);
+      });
+      select.disabled = false;
+      for (const id of headerFields) get('add-' + id).disabled = false;
+      status.textContent = pickerHeaders.length + ' headers available.';
+    };
+    worker.onmessage = ({data}) => finish(data);
+    worker.onerror = () => finish({error: 'Could not read headers. You can still enter names manually.'});
+    worker.postMessage({kind: 'headers', currentFile, separator: delimiter()});
+  } catch {
+    if (headerWorker) { headerWorker.terminate(); headerWorker = null; }
+    status.textContent = 'Could not start the header reader. You can still enter names manually.';
+  }
 }
 
 function rulesFromForm() {
   let columns;
   try { columns = JSON.parse(get('columns').value); }
   catch { throw new Error('Column rules must be valid JSON. Check the quotes, commas, and braces.'); }
-  const compare = names(get('compare').value);
-  return shapeRules({version: 1, key: names(get('key').value), required: names(get('required').value), columns, ...(compare.length ? {compare} : {})});
+  const compare = fieldNames('compare');
+  return shapeRules({version: 1, key: fieldNames('key'), required: fieldNames('required'), columns, ...(compare.length ? {compare} : {})});
 }
 
 function invalidate() {
@@ -192,7 +271,7 @@ workflow.addEventListener('submit', async event => {
     const output = await runWorker({currentFile,baselineFile,rules,separator});
     if (thisRun !== generation) return;
     report = output.report;
-    get('headers-info').textContent = 'Current columns: ' + output.headers.join(' · ');
+    get('headers-info').textContent = 'Current columns: ' + output.headers.slice(0, 40).map(displayHeader).join(' · ') + (output.headers.length > 40 ? ' · …' : '');
     get('headers-info').hidden = false;
     render();
     get('results').hidden = false;
@@ -211,11 +290,40 @@ workflow.addEventListener('submit', async event => {
 });
 
 for (const id of ['current', 'baseline', 'delimiter']) {
-  get(id).addEventListener('change', () => { invalidate(); fileInfo(); });
+  get(id).addEventListener('change', () => { ruleGeneration++; invalidate(); fileInfo(); if (id !== 'baseline') loadHeaders(); });
 }
 for (const id of ['key', 'required', 'columns', 'compare']) {
-  get(id).addEventListener('input', () => { ruleGeneration++; invalidate(); get('rules-info').textContent = ''; });
+  get(id).addEventListener('input', updateRules);
 }
+get('exact-names').addEventListener('change', () => {
+  try {
+    const values = Object.fromEntries(headerFields.map(id => [id, fieldNames(id)]));
+    if (exactMode && Object.values(values).flat().some(hasLineBreak)) {
+      throw new Error('Remove names containing line breaks before returning to one-name-per-line editing.');
+    }
+    setNames(values, get('exact-names').checked);
+    updateRules();
+  } catch (error) {
+    get('exact-names').checked = exactMode;
+    showError(error.message);
+  }
+});
+for (const id of headerFields) get('add-' + id).addEventListener('click', () => {
+  try {
+    const selected = pickerHeaders[Number(get('header-column').value)];
+    if (selected === undefined) return;
+    const values = Object.fromEntries(headerFields.map(field => [field, fieldNames(field)]));
+    if (values[id].includes(selected)) {
+      get('header-status').textContent = displayHeader(selected) + ' is already selected for ' + id + '.';
+      return;
+    }
+    values[id].push(selected);
+    setNames(values, exactMode || hasLineBreak(selected));
+    updateRules();
+    get('header-status').textContent = 'Added ' + displayHeader(selected) + ' to ' + id + '.';
+  } catch (error) { showError(error.message); }
+});
+
 get('clear-baseline').addEventListener('click', () => {
   get('baseline').value = '';
   invalidate();
@@ -224,6 +332,9 @@ get('clear-baseline').addEventListener('click', () => {
 get('clear-workspace').addEventListener('click', () => {
   ruleGeneration++;
   workflow.reset();
+  setNames({key: [], required: [], compare: []}, false);
+  get('header-picker').open = false;
+  loadHeaders();
   invalidate();
   get('rules-info').textContent = '';
   get('advanced').open = false;
@@ -240,9 +351,10 @@ get('rules-file').addEventListener('change', async () => {
     if (file.size > 256 * 1024) throw new Error('Rules files must be 256 KiB or smaller.');
     const imported = shapeRules(JSON.parse(await file.text()));
     if (thisImport !== ruleGeneration) return;
-    get('key').value = imported.key.join('\n');
-    get('required').value = imported.required.join('\n');
-    get('compare').value = (imported.compare || []).join('\n');
+    const values = {key: imported.key, required: imported.required, compare: imported.compare || []};
+    const exact = Object.values(values).flat().some(hasLineBreak);
+    setNames(values, exact);
+    if (exact) get('header-picker').open = true;
     get('columns').value = JSON.stringify(imported.columns, null, 2);
     invalidate();
     get('rules-info').textContent = 'Loaded rules from ' + file.name + '.';

@@ -33,11 +33,23 @@
     </section>
     <section class="panel" aria-labelledby="rules-heading">
       <div class="step"><span aria-hidden="true">02</span><div><h2 id="rules-heading">Set validation rules</h2><p>Use stable keys, such as a SKU, to match rows across exports. Combine columns when a single column is not unique. Column names are case-sensitive.</p></div></div>
+      <details id="header-picker">
+        <summary>Pick exact names from your CSV <small>Works with headers containing line breaks</small></summary>
+        <div class="actions">
+          <label class="field">Current CSV header <select id="header-column" disabled></select></label>
+          <button id="add-key" type="button" class="secondary" disabled>Add to key</button>
+          <button id="add-required" type="button" class="secondary" disabled>Add to required</button>
+          <button id="add-compare" type="button" class="secondary" disabled>Add to comparison</button>
+        </div>
+        <p id="header-status" class="hint" role="status">Choose a current CSV to list its headers.</p>
+        <label class="field"><input type="checkbox" id="exact-names"> Edit exact names as JSON arrays</label>
+        <p class="hint">The picker preserves spaces and line breaks. In JSON mode, <code>\n</code> represents a line break.</p>
+      </details>
       <div class="file-grid">
-        <label class="field">Key columns <small>One column name per line</small><textarea id="key" rows="2" placeholder="SKU" spellcheck="false"></textarea></label>
-        <label class="field">Required values <small>One column name per line</small><textarea id="required" rows="2" placeholder="Quantity" spellcheck="false"></textarea></label>
+        <label class="field">Key columns <small id="key-format">One column name per line</small><textarea id="key" rows="2" placeholder="SKU" spellcheck="false"></textarea></label>
+        <label class="field">Required values <small id="required-format">One column name per line</small><textarea id="required" rows="2" placeholder="Quantity" spellcheck="false"></textarea></label>
       </div>
-      <label class="field">Compare only these columns <small>Optional. One exact column name per line; blank compares every column.</small><textarea id="compare" rows="2" placeholder="Unit Price" spellcheck="false" aria-describedby="compare-help"></textarea></label>
+      <label class="field">Compare only these columns <small id="compare-format">Optional. One exact column name per line; blank compares every column.</small><textarea id="compare" rows="2" placeholder="Unit Price" spellcheck="false" aria-describedby="compare-help"></textarea></label>
       <p id="compare-help" class="hint">This filters changed values only. Added and removed rows, schema mismatches, and all validation checks are still reported. “Unchanged” means unchanged within the selected scope.</p>
       <details id="advanced">
         <summary>Advanced rules <small>Types, limits, allowed values, and rule files</small></summary>

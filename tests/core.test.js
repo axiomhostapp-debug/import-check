@@ -17,3 +17,15 @@ test('prototype-looking headers are data',()=>{let t=parseCSV('__proto__,constru
 test('comparison filter preserves additions/removals but counts unchanged within scope',()=>{const a=table('1,a,1\n2,b,2\n3,c,3'),b=table('1,renamed,1\n2,b,4\n4,d,5');const r={...rules,compare:['qty']};let d=diffTables(a,b,r);assert.equal(d.changed.length,1);assert.equal(d.unchanged,1);assert.deepEqual(d.added,['["4"]']);assert.deepEqual(d.removed,['["3"]']);assert.deepEqual(d.comparedColumns,['qty']);assert.equal(d.comparisonScope,'selected');assert.equal(diffTables(a,b,rules).changed.length,2);});
 test('filter never skips schema, key or validation failures',()=>{let r={...rules,compare:['qty']};assert.equal(validate(table('1,,1'),r).pass,false);assert.equal(diffTables(table('1,a,1'),table('1,a,1\n1,a,1'),r).comparable,false);assert.equal(diffTables(table('1,a,1'),parseCSV('id,name,qty,x\n1,a,1,x'),r).comparable,false);});
 test('invalid comparison scope rejected',()=>{for(const compare of [[],['missing'],['qty','qty'],'qty',null])assert.throws(()=>diffTables(table('1,a,1'),table('1,a,1'),{...rules,compare}));});
+
+test('exact multiline header remains a single rule and comparison column', () => {
+  const before = parseCSV('id,"Bottles\n\nPer Case"\n1,6\n2,12');
+  const after = parseCSV('id,"Bottles\n\nPer Case"\n2,12\n1,12');
+  const column = 'Bottles\n\nPer Case';
+  const rules = {version:1,key:['id'],required:[column],columns:{[column]:{type:'integer',min:1}},compare:[column]};
+  assert.equal(validate(after,rules).pass,true);
+  const result=diffTables(before,after,rules);
+  assert.equal(result.changed.length,1);
+  assert.equal(result.unchanged,1);
+  assert.equal(result.changed[0].fields[0].column,column);
+});
