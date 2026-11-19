@@ -80,6 +80,19 @@ use original USDA FoodData Central and OurAirports exports sourced by an indepen
 research worker, not generated CSV documents. See `docs/public-data-results.json` and
 the release provenance notes. Public files are not bundled into this repository.
 
+### Real-data example: monthly price changes
+
+Download the full numeric CSVs from Oregon OLCC's [current-month page](https://www.oregon.gov/olcc/liquorstores/pages/current_month_productandpricing.aspx) and [next-month page](https://www.oregon.gov/olcc/liquorstores/pages/next_month_productandpricing.aspx). Use the older file as the baseline and the newer one as the current export. Enter `Item Code` as the key, `Description` as the required column, and `Unit Price` under “Compare only these columns.” Run preflight.
+
+The Firefox test used the original November and December 2026 exports:
+
+| Effective date | Rows | SHA-256 |
+| --- | ---: | --- |
+| 2026-11-01 | 3,654 | `c37b2e35a3151481a1da12ddb3a4e1ecb678eb68f9f827190001e15c753585ec` |
+| 2026-12-01 | 3,651 | `8ac194fc24a3910355c0cd9c20a1572a1430b0796a30344ba84fc2bf10e8650b` |
+
+The report showed **211 price changes, 2 additions, 5 removals, and 3,438 shared items with unchanged prices**. For example, `0140B` went from $14.95 to $19.95 and `0120B` went from $18.95 to $16.95. With the column filter cleared, all 3,649 shared rows show as changed because their effective date changed. The download pages roll forward monthly; check the dates and hashes before expecting these exact totals. Oregon's separate price-change report also tracks catalog events beyond price changes, so its totals need not match.
+
 ## Limits
 
 - UTF-8 only, maximum 20 MiB per file and 200,000 data rows. No XLSX/PDF, locale
