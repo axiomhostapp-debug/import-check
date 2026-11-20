@@ -55,6 +55,20 @@ rule options and missing referenced columns fail closed. Keys and comparisons us
 exact cell strings, preserving leading zeros, case and whitespace. Whitespace-only
 keys/required fields are treated as missing. No automatic cleanup rewrites your data.
 
+### Mixed date exports
+
+Date rules are ISO-only unless explicitly configured. For a column that intentionally
+uses either ISO or U.S. month-first dates, use this in Column rules (JSON):
+
+```json
+{"publication_date": {"type":"date","formats":["YYYY-MM-DD","M/D/YYYY"]}}
+```
+
+`M/D/YYYY` accepts one or two digits for month and day (including `07/09/2023`),
+always month first. The tool checks the calendar date without guessing a locale,
+changing the source text, or treating equivalent text forms as equal in comparisons.
+Formats are preserved in the existing version 1 rules file.
+
 ## Focused comparison
 
 Optionally enter exact column names in “Compare only these columns”, one per line.
@@ -106,7 +120,7 @@ The report showed **211 price changes, 2 additions, 5 removals, and 3,438 shared
   consume substantial memory. Numeric rules use IEEE-754 numbers, not decimal money.
 - No import is performed. There is no database connector, scheduled monitoring,
   cloud sync, billing, multi-user storage or guarantee of destination compatibility.
-- Date rules intentionally reject mixed formats even if a source uses them validly;
+- Date rules reject any format not explicitly allowed;
   a rule failure is not proof that the publisher's data is wrong.
 
 ## Layout

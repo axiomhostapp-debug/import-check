@@ -33,6 +33,19 @@ export function parseCSV(text, delimiter = ',') {
   if(rows.length>200000)throw new Error('CSV exceeds the 200,000 data-row limit.');
   return {headers,rows};
 }
+const DATE_FORMATS=['YYYY-MM-DD','M/D/YYYY'];
+function calendarDate(value,format){
+  if(format==='YYYY-MM-DD'){
+    const d=new Date(value+'T00:00:00Z');
+    return /^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(d.valueOf())&&d.toISOString().slice(0,10)===value;
+  }
+  const parts=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+  if(!parts||parts[0]!==value)return false;
+  const [month,day,year]=parts.slice(1).map(Number);
+  if(year===0||month<1||month>12||day<1)return false;
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  return day<=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31][month-1];
+}
 function issue(line,column,code,message){return {line,column,code,message};}
 export function checkRules(rules, headers) {
   if(!rules||typeof rules!=='object'||Array.isArray(rules)||rules.version!==1)throw new Error('Rules must be an object with version: 1.');
@@ -47,8 +60,9 @@ export function checkRules(rules, headers) {
   if(missing.length)throw new Error(`Rules reference missing columns: ${missing.join(', ')}.`);
   for(const [column,r] of Object.entries(rules.columns)){
     if(!r||typeof r!=='object'||Array.isArray(r))throw new Error(`Invalid rule for ${column}.`);
-    for(const k of Object.keys(r))if(!['type','min','max','enum'].includes(k))throw new Error(`Unknown ${column} rule: ${k}.`);
+    for(const k of Object.keys(r))if(!['type','min','max','enum','formats'].includes(k))throw new Error(`Unknown ${column} rule: ${k}.`);
     if(!['string','number','integer','date'].includes(r.type))throw new Error(`Choose string, number, integer or date for ${column}.`);
+    if(r.formats!==undefined&&(r.type!=='date'||!Array.isArray(r.formats)||!r.formats.length||r.formats.some(f=>!DATE_FORMATS.includes(f))||new Set(r.formats).size!==r.formats.length))throw new Error(`${column}: formats requires a date rule and a nonempty list of distinct formats: YYYY-MM-DD or M/D/YYYY.`);
     for(const k of ['min','max'])if(r[k]!==undefined&&(!['number','integer'].includes(r.type)||typeof r[k]!=='number'||!Number.isFinite(r[k])))throw new Error(`${column}: ${k} requires a finite numeric bound and numeric type.`);
     if(r.min!==undefined&&r.max!==undefined&&r.min>r.max)throw new Error(`${column}: min exceeds max.`);
     if(r.enum!==undefined&&(!Array.isArray(r.enum)||r.enum.length===0||r.enum.some(v=>typeof v!=='string')))throw new Error(`${column}: enum must contain strings.`);
@@ -79,8 +93,8 @@ export function validate(table,rules) {
         else for(const bound of ['min','max'])if(r[bound]!==undefined&&(bound==='min'?Number(value)<r[bound]:Number(value)>r[bound]))issues.push(issue(row.line,column,'range',`Value must be ${bound==='min'?'at least':'at most'} ${r[bound]}.`));
       }
       if(r.type==='date'){
-        const d=new Date(value+'T00:00:00Z');valid=/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(d.valueOf())&&d.toISOString().slice(0,10)===value;
-        if(!valid)issues.push(issue(row.line,column,'type','Expected a real calendar date in YYYY-MM-DD format.'));
+        const formats=r.formats??['YYYY-MM-DD'];
+        if(!formats.some(f=>calendarDate(value,f)))issues.push(issue(row.line,column,'type',`Expected a real calendar date in ${formats.join(' or ')} format.`));
       }
       if(r.enum&&!r.enum.includes(value))issues.push(issue(row.line,column,'enum',`Choose one of: ${r.enum.join(', ')}.`));
     }

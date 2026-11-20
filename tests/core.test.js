@@ -29,3 +29,16 @@ test('exact multiline header remains a single rule and comparison column', () =>
   assert.equal(result.unchanged,1);
   assert.equal(result.changed[0].fields[0].column,column);
 });
+test('dates preserve ISO default and accept only explicitly selected formats',()=>{
+ const rules={version:1,key:[],required:[],columns:{d:{type:'date'}}};
+ const accepted=['2024-02-29','2/29/2024','02/29/2000','7/09/2023','01/1/0001'];
+ const rejected=['2023-02-29','2/29/1900','2/29/2100','2/29/2023','4/31/2024','13/1/2024','1/0/2024','1/1/0000','29/2/2024','2/29/24','002/29/2024',' 2/29/2024','2/29/2024\n'];
+ const all={...rules,columns:{d:{type:'date',formats:['YYYY-MM-DD','M/D/YYYY']}}};
+ const tableFor=x=>parseCSV('d\n"'+x+'"');
+ for(const value of accepted)assert(validate(tableFor(value),all).pass,value);
+ for(const value of rejected)assert.equal(validate(tableFor(value),all).pass,false,value);
+ assert.equal(validate(tableFor('2/29/2024'),rules).pass,false);
+ assert.equal(validate(tableFor('2024-02-29'),{...rules,columns:{d:{type:'date',formats:['M/D/YYYY']}}}).pass,false);
+ for(const formats of [[],['D/M/YYYY'],['M/D/YYYY','M/D/YYYY'],null,'M/D/YYYY'])assert.throws(()=>validate(tableFor('2/29/2024'),{...rules,columns:{d:{type:'date',formats}}}),/formats requires/);
+ assert.throws(()=>validate(tableFor('1'),{...rules,columns:{d:{type:'number',formats:['M/D/YYYY']}}}),/formats requires/);
+});
