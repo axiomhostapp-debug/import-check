@@ -53,7 +53,7 @@
       <p id="compare-help" class="hint">This filters changed values only. Added and removed rows, schema mismatches, and all validation checks are still reported. “Unchanged” means unchanged within the selected scope.</p>
       <details id="advanced">
         <summary>Advanced rules <small>Types, limits, allowed values, and rule files</small></summary>
-        <p class="hint">Set per-column rules as JSON. Supported types: string, number, integer, and date (YYYY-MM-DD by default). Date rules may explicitly allow month-first text with <code>{"formats":["YYYY-MM-DD","M/D/YYYY"]}</code> alongside <code>"type":"date"</code>. Use <code>min</code> and <code>max</code> for numeric columns and <code>enum</code> for allowed text values.</p>
+        <p class="hint">Set per-column rules as JSON. Supported types: string, number, integer, and date (YYYY-MM-DD by default). Date rules may explicitly allow month-first text with <code>{"formats":["YYYY-MM-DD","M/D/YYYY"]}</code> alongside <code>"type":"date"</code>. Use <code>min</code> and <code>max</code> for numeric columns and <code>enum</code> for allowed text values. Set <code>"unique":true</code> to reject duplicate populated values.</p>
         <label class="field">Column rules (JSON)<textarea id="columns" rows="5" spellcheck="false" aria-describedby="rules-example">{}</textarea></label>
         <p class="hint" id="rules-example">Example: <code>{"Quantity":{"type":"integer","min":0},"State":{"type":"string","enum":["active","archived"]}}</code></p>
         <div class="actions"><label class="field">Import a rules file<input id="rules-file" type="file" accept=".json,application/json"></label><button type="button" id="export-rules" class="secondary">Download rules</button></div>

@@ -42,3 +42,14 @@ test('dates preserve ISO default and accept only explicitly selected formats',()
  for(const formats of [[],['D/M/YYYY'],['M/D/YYYY','M/D/YYYY'],null,'M/D/YYYY'])assert.throws(()=>validate(tableFor('2/29/2024'),{...rules,columns:{d:{type:'date',formats}}}),/formats requires/);
  assert.throws(()=>validate(tableFor('1'),{...rules,columns:{d:{type:'number',formats:['M/D/YYYY']}}}),/formats requires/);
 });
+test('secondary uniqueness ignores blanks, preserves identity key and exact text',()=>{
+ const t=parseCSV('id,code,alias\n1,01,a\n2,1,a\n3,,b\n4," ",c\n5,01,A');
+ const rules={version:1,key:['id'],required:[],columns:{code:{type:'string',unique:true},alias:{type:'string',unique:true}}};
+ const result=validate(t,rules);
+ assert.deepEqual(result.issues.map(({line,column,code})=>[line,column,code]),[[3,'alias','duplicate_value'],[6,'code','duplicate_value']]);
+ assert.match(result.issues[1].message,/line 2/);
+ assert.equal(validate(t,{...rules,required:['code']}).issues.filter(i=>i.code==='required').length,2);
+ assert.equal(validate(t,{...rules,columns:{code:{type:'string',unique:false}}}).pass,true);
+ assert.throws(()=>validate(t,{...rules,columns:{code:{type:'string',unique:'true'}}}),/unique must be true or false/);
+ assert.equal(diffTables(t,t,rules).unchanged,5);
+});

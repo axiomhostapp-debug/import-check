@@ -60,8 +60,9 @@ export function checkRules(rules, headers) {
   if(missing.length)throw new Error(`Rules reference missing columns: ${missing.join(', ')}.`);
   for(const [column,r] of Object.entries(rules.columns)){
     if(!r||typeof r!=='object'||Array.isArray(r))throw new Error(`Invalid rule for ${column}.`);
-    for(const k of Object.keys(r))if(!['type','min','max','enum','formats'].includes(k))throw new Error(`Unknown ${column} rule: ${k}.`);
+    for(const k of Object.keys(r))if(!['type','min','max','enum','formats','unique'].includes(k))throw new Error(`Unknown ${column} rule: ${k}.`);
     if(!['string','number','integer','date'].includes(r.type))throw new Error(`Choose string, number, integer or date for ${column}.`);
+    if(r.unique!==undefined&&typeof r.unique!=='boolean')throw new Error(`${column}: unique must be true or false.`);
     if(r.formats!==undefined&&(r.type!=='date'||!Array.isArray(r.formats)||!r.formats.length||r.formats.some(f=>!DATE_FORMATS.includes(f))||new Set(r.formats).size!==r.formats.length))throw new Error(`${column}: formats requires a date rule and a nonempty list of distinct formats: YYYY-MM-DD or M/D/YYYY.`);
     for(const k of ['min','max'])if(r[k]!==undefined&&(!['number','integer'].includes(r.type)||typeof r[k]!=='number'||!Number.isFinite(r[k])))throw new Error(`${column}: ${k} requires a finite numeric bound and numeric type.`);
     if(r.min!==undefined&&r.max!==undefined&&r.min>r.max)throw new Error(`${column}: min exceeds max.`);
@@ -80,11 +81,17 @@ function keyIndex(table, rules) {
 }
 export function validate(table,rules) {
   checkRules(rules,table.headers);const issues=[];
+  const seen=new Map(Object.entries(rules.columns).filter(([,r])=>r.unique).map(([column])=>[column,new Map()]));
   if(rules.key.length)issues.push(...keyIndex(table,rules).issues);
   for(const row of table.rows){
     for(const column of rules.required)if(!row.values[column].trim())issues.push(issue(row.line,column,'required','A value is required.'));
     for(const [column,r] of Object.entries(rules.columns)){
       const value=row.values[column];if(!value.trim())continue;
+      if(seen.has(column)){
+        const index=seen.get(column);
+        if(index.has(value))issues.push(issue(row.line,column,'duplicate_value',`Duplicate value ${JSON.stringify(value)}; first seen on line ${index.get(value)}.`));
+        else index.set(value,row.line);
+      }
       let valid=true;
       if(r.type==='number'||r.type==='integer'){
         valid=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)&&Number.isFinite(Number(value));

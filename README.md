@@ -55,6 +55,16 @@ rule options and missing referenced columns fail closed. Keys and comparisons us
 exact cell strings, preserving leading zeros, case and whitespace. Whitespace-only
 keys/required fields are treated as missing. No automatic cleanup rewrites your data.
 
+### Optional unique values
+
+To reject duplicate populated values in a column without making it an identity
+key, add `"unique": true` to that column's rule. For example, keep the airport
+`id` as the comparison key and use `{"iata_code":{"type":"string","unique":true}}`
+in Column rules (JSON). Blank and whitespace-only values are ignored unless
+the column is also required. Values are compared as exact text, so leading
+zeros and case remain significant. Duplicate reports point to the first occurrence.
+Use the rule only when your destination expects populated values to be unique.
+
 ### Mixed date exports
 
 Date rules are ISO-only unless explicitly configured. For a column that intentionally
